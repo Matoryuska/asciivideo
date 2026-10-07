@@ -5,15 +5,7 @@ import time
 import cv2
 import numpy as np
 import pygame
-
-# Presets de caracteres ASCII según el estilo deseado
-ASCII_PRESETS = {
-    "Estándar": " .:-=+*#%@",
-    "Detallado": " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@@",
-    "Bloques (Minimalista)": " ░▒▓█",
-    "Binario": " 01",
-    "Símbolos": " .:+*#@"
-}
+import subprocess
 
 def get_ffmpeg_path():
     local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe" if sys.platform.startswith("win") else "ffmpeg")
@@ -25,10 +17,17 @@ def main():
     parser = argparse.ArgumentParser(description="Reproductor de video ascii para la terminal con sonido")
     parser.add_argument("video", help="Ruta al archivo de video")
     parser.add_argument("-w", "--width", type=int, default=120, help="Ancho en caracteres de la terminal")
-    parser.add_argument("-s", "--style", type=str, default="Estándar", choices=list(ASCII_PRESETS.keys()), help="Estilo de caracteres ASCII")
-    parser.add_argument("--invert", action="store_true", help="Invertir los colores (para fondo claro)")
+    
+    # Comandos independientes para cada estilo de caracteres
+    style_group = parser.add_mutually_exclusive_group()
+    style_group.add_argument("--minimalist", action="store_true", help="Usa estilo de bloques minimalistas (░▒▓█)")
+    style_group.add_argument("--binary", action="store_true", help="Usa estilo binario (0 y 1)")
+    style_group.add_argument("--detailed", action="store_true", help="Usa estilo detallado con gran variedad de caracteres")
+    style_group.add_argument("--symbols", action="store_true", help="Usa estilo de símbolos básicos")
+    
+    parser.add_argument("--invert", action="store_true", help="Invertir los colores (ideal para fondo claro)")
     parser.add_argument("--mute", action="store_true", help="Silenciar el audio")
-    parser.add_argument("--loop", action="store_true", help="Reproducir en bucle")
+    parser.add_argument("--loop", action="store_true", help="Reproducir en bucle continuo")
     args = parser.parse_args()
 
     video_path = args.video
@@ -36,14 +35,25 @@ def main():
         print(f"Error: No se encuentra el archivo {video_path}", file=sys.stderr)
         sys.exit(1)
 
-    ascii_chars = ASCII_PRESETS.get(args.style, ASCII_PRESETS["Estándar"])
+    # Selección de rampa de caracteres basada en el comando escogido
+    if args.minimalist:
+        ascii_chars = " ░▒▓█"
+    elif args.binary:
+        ascii_chars = " 01"
+    elif args.detailed:
+        ascii_chars = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@@"
+    elif args.symbols:
+        ascii_chars = " .:+*#@"
+    else:
+        ascii_chars = " .:-=+*#%@"  # Estándar por defecto
+
     if args.invert:
         ascii_chars = ascii_chars[::-1]
 
     pygame.mixer.init()
     audio_temp = os.path.join(os.getcwd(), "temp_audio.wav")
     
-    # Extraer Audio si no está silenciado
+    # Extracción de audio con ffmpeg si no está silenciado
     if not args.mute:
         ffmpeg_bin = get_ffmpeg_path()
         ffmpeg_cmd = [
@@ -55,7 +65,7 @@ def main():
         except Exception:
             pass
 
-    # Ocultar cursor de la terminal
+    # Ocultar el cursor de la terminal
     sys.stdout.write("\x1b[?25l")
     sys.stdout.flush()
 
@@ -71,7 +81,7 @@ def main():
                 fps = 30.0
             frame_delay = 1.0 / fps
 
-            # Iniciar Audio con Pygame
+            # Reproducción de audio en sincronía con pygame
             if not args.mute and os.path.exists(audio_temp):
                 try:
                     pygame.mixer.music.load(audio_temp)
@@ -121,7 +131,7 @@ def main():
                 break
 
     finally:
-        # Restaurar cursor y limpiar temporales
+        # Restaurar cursor y limpiar archivos temporales
         sys.stdout.write("\x1b[?25h")
         sys.stdout.flush()
         pygame.mixer.quit()
