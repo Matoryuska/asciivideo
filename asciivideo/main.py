@@ -7,27 +7,19 @@ import time
 
 # Rampa de caracteres de oscuro a claro (puedes cambiarla o invertirla si se sigue viendo mal)
 # Si se ve muy blanco, prueba invirtiéndola: "@#S%?*+;:,. "
-ASCII_CHARS = "@#W$9876543210?!abc;:+-. "
-
-def resize_frame(image, new_width=100):
-    (h, w) = image.shape[:2]
-    aspect_ratio = h / w
-    # Multiplicamos por 0.55 porque los caracteres en la terminal son más altos que anchos
-    new_height = int(new_width * aspect_ratio * 0.55)
-    return cv2.resize(image, (new_width, new_height))
+ASCII_CHARS = " .:-=+*#%@"  # Del menos denso (más oscuro en fondo negro) al más denso
 
 def pixels_to_ascii(image):
     pixels = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Normalizar contraste para evitar que se vea todo blanco o todo negro
-    pixels = cv2.equalizeHist(pixels)
+    # Opcional: si quieres el efecto negativo (invertir), descomenta la siguiente línea:
+    # pixels = cv2.bitwise_not(pixels)
     
-    # Mapear cada píxel a un carácter de la rampa
+    # Mapear cada píxel a un carácter de la rampa de forma directa
     indices = (pixels / 255 * (len(ASCII_CHARS) - 1)).astype(int)
     
     lines = "".join([ASCII_CHARS[pixel] for row in indices for pixel in row])
     
-    # Agrupar las líneas según el ancho de la imagen redimensionada
     width = image.shape[1]
     return "\n".join([lines[i:i+width] for i in range(0, len(lines), width)])
 
@@ -74,7 +66,7 @@ def main():
                 break
 
             # Redimensionar y convertir a ASCII
-            resized_frame = resize_frame(frame, new_width=args.width)
+            resized_frame = cv2.resize(frame, (args.width, int(frame.shape[0] * args.width / frame.shape[1])))
             ascii_str = pixels_to_ascii(resized_frame)
 
             # Volver arriba en la terminal (ANSI escape code) para sobrescribir y evitar parpadeo
