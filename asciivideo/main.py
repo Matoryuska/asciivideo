@@ -7,7 +7,7 @@ import time
 
 # Rampa de caracteres de oscuro a claro (puedes cambiarla o invertirla si se sigue viendo mal)
 # Si se ve muy blanco, prueba invirtiéndola: "@#S%?*+;:,. "
-ASCII_CHARS = " .:-=+*#%@"  # Del menos denso (más oscuro en fondo negro) al más denso
+ASCII_CHARS = "@%#*+=-:. "  # Del menos denso (más oscuro en fondo negro) al más denso
 
 def pixels_to_ascii(image):
     pixels = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
