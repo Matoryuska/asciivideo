@@ -7,16 +7,26 @@ arch=('any')
 url="https://github.com/Matoryuska/asciivideo"
 license=('MIT')
 depends=('python' 'python-opencv' 'python-numpy')
-makedepends=('python-build' 'python-installer' 'python-wheel')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/Matoryuska/asciivideo/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
-
-build() {
-    cd "$pkgname-$pkgver"
-    python -m build --wheel --no-isolation
-}
+source=()
 
 package() {
-    cd "$pkgname-$pkgver"
-    python -m installer --destdir="$pkgdir" dist/*.whl
+    # Copiar el código fuente directamente desde tu carpeta actual al sistema
+    cd "$startdir"
+    
+    # Crear las carpetas de destino en el sistema
+    install -d "$pkgdir/usr/bin"
+    install -d "$pkgdir/usr/lib/python3.14/site-packages/asciivideo"
+    
+    # Copiar los archivos de la librería
+    install -m 644 asciivideo/__init__.py "$pkgdir/usr/lib/python3.14/site-packages/asciivideo/"
+    install -m 644 asciivideo/main.py "$pkgdir/usr/lib/python3.14/site-packages/asciivideo/"
+    
+    # Crear el script ejecutable global de terminal
+    cat << 'EOF' > "$pkgdir/usr/bin/asciivideo"
+#!/usr/bin/env python
+from asciivideo.main import main
+if __name__ == '__main__':
+    main()
+EOF
+    chmod +x "$pkgdir/usr/bin/asciivideo"
 }
